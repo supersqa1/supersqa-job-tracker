@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { JobApplication } from "@/lib/types";
 import { STATUS_CONFIG } from "@/lib/constants";
 import { cn, formatRelativeDays, getInitials } from "@/lib/utils";
+import { Icon } from "@/components/ui/Icon";
 import { StatusChip } from "@/components/ui/StatusChip";
 
 interface ApplicationCardProps {
@@ -101,12 +102,12 @@ export function ApplicationCard({
               >
                 {isActive ? (
                   <>
-                    <span className="material-symbols-outlined text-[14px]">bolt</span>
+                    <Icon name="bolt" className="text-[14px]" />
                     Active
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[14px]">schedule</span>
+                    <Icon name="schedule" className="text-[14px]" />
                     {formatRelativeDays(referenceDate)}
                   </>
                 )}
@@ -120,7 +121,7 @@ export function ApplicationCard({
                 }}
                 className="flex h-7 w-7 items-center justify-center border border-outline-variant/30 bg-black/20 text-outline-variant transition-colors hover:border-primary-fixed-dim/50 hover:text-primary-fixed-dim"
               >
-                <span className="material-symbols-outlined text-[16px]">edit</span>
+                <Icon name="edit" className="text-[16px]" />
               </button>
             </div>
           </div>
@@ -172,9 +173,7 @@ export function ApplicationCard({
 
           {isApplied && (
             <div className="mt-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-secondary">
-                check_circle
-              </span>
+              <Icon name="check_circle" className="text-[16px] text-secondary" />
               <span className="font-[family-name:var(--font-mono-data)] text-[12px] text-outline-variant">
                 Application Sent
               </span>

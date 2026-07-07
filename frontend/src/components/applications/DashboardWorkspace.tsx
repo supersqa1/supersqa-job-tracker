@@ -11,8 +11,14 @@ import {
   deleteApplication,
   updateApplication,
 } from "@/lib/api";
-import { KANBAN_STATUSES, STATUS_CONFIG } from "@/lib/constants";
+import { STATUS_CONFIG } from "@/lib/constants";
 import { NeoButton } from "@/components/ui/NeoButton";
+import { Icon } from "@/components/ui/Icon";
+import {
+  buildSummary,
+  countDueApplications,
+  filterApplications,
+} from "./dashboard-logic";
 import { ApplicationModal } from "./ApplicationModal";
 import { KanbanBoard } from "./KanbanBoard";
 
@@ -23,16 +29,6 @@ interface DashboardWorkspaceProps {
 type ModalState =
   | { mode: "create"; status: ApplicationStatus; application: null }
   | { mode: "edit"; status: ApplicationStatus; application: JobApplication };
-
-function buildSummary(applications: JobApplication[]) {
-  return KANBAN_STATUSES.reduce(
-    (summary, status) => {
-      summary[status] = applications.filter((app) => app.status === status).length;
-      return summary;
-    },
-    { total: applications.length } as Record<ApplicationStatus | "total", number>,
-  );
-}
 
 export function DashboardWorkspace({
   initialApplications,
@@ -48,28 +44,12 @@ export function DashboardWorkspace({
 
   const normalizedQuery = query.trim().toLowerCase();
   const visibleApplications = useMemo(() => {
-    if (!normalizedQuery) return applications;
-    return applications.filter((application) =>
-      [
-        application.company_name,
-        application.role_title,
-        application.location ?? "",
-        application.next_action ?? "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedQuery),
-    );
+    return filterApplications(applications, normalizedQuery);
   }, [applications, normalizedQuery]);
 
   const summary = useMemo(() => buildSummary(applications), [applications]);
   const dueCount = useMemo(() => {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    return applications.filter((application) => {
-      if (!application.next_action_at) return false;
-      return new Date(application.next_action_at) <= today;
-    }).length;
+    return countDueApplications(applications);
   }, [applications]);
 
   function openCreate(status: ApplicationStatus = "potential") {
@@ -177,22 +157,21 @@ export function DashboardWorkspace({
             </p>
           </div>
           <NeoButton className="px-6 py-3" onClick={() => openCreate()}>
-            <span className="material-symbols-outlined filled text-[18px]">
-              add_circle
-            </span>
+            <Icon name="add_circle" className="text-[18px]" />
             New Application
           </NeoButton>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_auto_auto] lg:items-center">
           <label className="relative block">
-            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">
-              search
-            </span>
+            <Icon
+              name="search"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline"
+            />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="field-control pl-10"
+              className="field-control field-control-with-leading-icon"
               placeholder="Search company, role, location, action"
             />
           </label>
@@ -250,7 +229,7 @@ export function DashboardWorkspace({
             disabled={isSaving}
             onClick={deleteCurrentApplication}
           >
-            <span className="material-symbols-outlined text-[18px]">delete</span>
+            <Icon name="delete" className="text-[18px]" />
             Delete
           </NeoButton>
           <NeoButton
@@ -259,7 +238,7 @@ export function DashboardWorkspace({
             disabled={isSaving}
             onClick={() => archiveApplication(modal.application)}
           >
-            <span className="material-symbols-outlined text-[18px]">archive</span>
+            <Icon name="archive" className="text-[18px]" />
             Archive
           </NeoButton>
         </div>

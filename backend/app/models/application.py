@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -27,6 +27,11 @@ class JobApplication(Base):
     __tablename__ = "job_applications"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
     company_name: Mapped[str] = mapped_column(String(200), index=True)
     role_title: Mapped[str] = mapped_column(String(200))
     status: Mapped[ApplicationStatus] = mapped_column(

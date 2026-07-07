@@ -1,25 +1,29 @@
 $Root = $PSScriptRoot
-Set-Location $Root
-
-if (Test-Path "backend\.env") {
-  Get-Content "backend\.env" | ForEach-Object {
-    $Line = $_.Trim()
-    if ($Line -and -not $Line.StartsWith("#")) {
-      $Parts = $Line.Split("=", 2)
-      if ($Parts.Count -eq 2) {
-        [Environment]::SetEnvironmentVariable($Parts[0].Trim(), $Parts[1].Trim(), "Process")
-      }
-    }
-  }
-}
+$BackendDir = Join-Path $Root "backend"
 
 $BindHost = if ($env:HOST) { $env:HOST } else { "0.0.0.0" }
 $Port = if ($env:PORT) { $env:PORT } else { "3050" }
 
-Set-Location "backend"
+Write-Host "Starting backend API"
+Write-Host "Backend folder: $BackendDir"
 
-if (Test-Path ".venv\Scripts\python.exe") {
-  & ".venv\Scripts\python.exe" -m uvicorn app.main:app --reload --host $BindHost --port $Port
-} else {
-  & python -m uvicorn app.main:app --reload --host $BindHost --port $Port
+Set-Location $BackendDir
+
+if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
+  Write-Host "Creating backend .env from .env.example..."
+  Copy-Item ".env.example" ".env"
 }
+
+if (-not (Test-Path ".venv")) {
+  Write-Host "Creating Python virtual environment..."
+  python -m venv .venv
+}
+
+$Python = if (Test-Path ".venv\Scripts\python.exe") { ".venv\Scripts\python.exe" } else { "python" }
+
+Write-Host "Installing backend dependencies..."
+& $Python -m pip install -r requirements.txt
+
+Write-Host "Backend API: http://localhost:$Port"
+Write-Host "Swagger docs: http://localhost:$Port/docs"
+& $Python -m uvicorn app.main:app --reload --host $BindHost --port $Port

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/Icon";
 
 export function MobileFooter() {
   const pathname = usePathname();
@@ -28,11 +29,7 @@ export function MobileFooter() {
               isActive ? "text-primary-fixed-dim" : "text-outline",
             )}
           >
-            <span
-              className={cn("material-symbols-outlined", isActive && "filled")}
-            >
-              {item.icon}
-            </span>
+            <Icon name={item.icon} className="text-[20px]" />
             <span className="mt-1 font-[family-name:var(--font-label)] text-[10px]">
               {item.label === "Dashboard" ? "Dash" : item.label}
             </span>
@@ -46,7 +43,7 @@ export function MobileFooter() {
           className="neo-glass-btn flex h-12 w-12 items-center justify-center rounded-full bg-surface-container text-primary-fixed-dim"
           aria-label="New application"
         >
-          <span className="material-symbols-outlined">add</span>
+          <Icon name="add" className="text-[22px]" />
         </button>
       </div>
 
@@ -62,7 +59,7 @@ export function MobileFooter() {
               isActive ? "text-primary-fixed-dim" : "text-outline",
             )}
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
+            <Icon name={item.icon} className="text-[20px]" />
             <span className="mt-1 font-[family-name:var(--font-label)] text-[10px]">
               {item.label}
             </span>

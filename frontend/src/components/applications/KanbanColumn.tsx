@@ -1,6 +1,7 @@
 import type { ApplicationStatus, JobApplication } from "@/lib/types";
 import { STATUS_CONFIG } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/Icon";
 import { ApplicationCard } from "./ApplicationCard";
 
 interface KanbanColumnProps {
@@ -72,7 +73,7 @@ export function KanbanColumn({
             onClick={() => onAdd(status)}
             className="flex h-8 w-8 items-center justify-center border border-outline-variant/30 text-outline-variant transition-colors hover:border-primary-fixed-dim/50 hover:text-primary-fixed-dim"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            <Icon name="add" className="text-[18px]" />
           </button>
         </div>
       </div>
@@ -85,9 +86,7 @@ export function KanbanColumn({
       >
         {applications.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center border border-dashed border-outline-variant/20 p-6 text-center text-outline-variant">
-            <span className="material-symbols-outlined mb-2 text-[32px] opacity-50">
-              radar
-            </span>
+            <Icon name="radar" className="mb-2 text-[32px] opacity-50" />
             <p className="font-[family-name:var(--font-mono-data)] text-sm">
               No applications in this stage.
             </p>

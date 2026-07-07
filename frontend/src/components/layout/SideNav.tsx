@@ -2,18 +2,72 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/Icon";
 
-export function SideNav() {
+interface SideNavProps {
+  isPinned: boolean;
+  onPinnedChange: (isPinned: boolean) => void;
+}
+
+export function SideNav({ isPinned, onPinnedChange }: SideNavProps) {
   const pathname = usePathname();
+  const [isHovered, setIsHovered] = useState(false);
+  const [isHoverSuppressed, setIsHoverSuppressed] = useState(false);
+  const isExpanded = isPinned || (isHovered && !isHoverSuppressed);
+
+  function handleTogglePinned() {
+    if (isExpanded) {
+      onPinnedChange(false);
+      setIsHoverSuppressed(true);
+      setIsHovered(false);
+    } else {
+      onPinnedChange(true);
+      setIsHoverSuppressed(false);
+    }
+  }
 
   return (
-    <aside className="group fixed left-0 top-16 z-40 hidden h-[calc(100vh-4rem)] w-20 flex-col overflow-hidden border-r border-outline-variant/20 bg-surface-container-low/80 backdrop-blur-2xl transition-all duration-300 ease-in-out hover:w-64 md:flex">
-      <div className="flex items-center gap-4 overflow-hidden whitespace-nowrap p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+    <aside
+      onMouseEnter={() => {
+        if (!isHoverSuppressed) {
+          setIsHovered(true);
+        }
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setIsHoverSuppressed(false);
+      }}
+      className={cn(
+        "group fixed left-0 top-16 z-40 hidden h-[calc(100vh-4rem)] flex-col overflow-hidden border-r border-outline-variant/20 bg-surface-container-low/80 backdrop-blur-2xl transition-all duration-300 ease-in-out md:flex",
+        isExpanded ? "w-64" : "w-20",
+      )}
+    >
+      <button
+        type="button"
+        onClick={handleTogglePinned}
+        className={cn(
+          "mx-2 mt-3 flex h-11 items-center rounded border-l-4 border-transparent p-3 text-on-surface-variant transition-colors hover:bg-surface-variant/30 hover:text-primary-fixed",
+          isExpanded ? "justify-end" : "justify-center",
+          isPinned && "text-primary-fixed-dim",
+        )}
+        aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+        title={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        <Icon name={isExpanded ? "keyboard_double_arrow_left" : "keyboard_double_arrow_right"} className="text-[20px]" />
+      </button>
+
+      <div
+        className={cn(
+          "flex items-center gap-4 overflow-hidden whitespace-nowrap p-6 pt-4 transition-opacity duration-300",
+          isExpanded ? "opacity-100" : "opacity-0",
+        )}
+      >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-outline-variant/50 bg-surface-container-high">
           <span className="font-[family-name:var(--font-display)] text-sm font-bold text-primary-fixed-dim">
-            NH
+            SQ
           </span>
         </div>
         <div>
@@ -44,15 +98,13 @@ export function SideNav() {
                   : "border-transparent text-on-surface-variant hover:bg-surface-variant/30 hover:text-primary-fixed",
               )}
             >
+              <Icon name={item.icon} className="ml-1 text-[20px]" />
               <span
                 className={cn(
-                  "material-symbols-outlined ml-1 shrink-0",
-                  isActive && "filled",
+                  "whitespace-nowrap font-[family-name:var(--font-label)] text-xs uppercase transition-opacity duration-300",
+                  isExpanded ? "opacity-100" : "opacity-0",
                 )}
               >
-                {item.icon}
-              </span>
-              <span className="whitespace-nowrap font-[family-name:var(--font-label)] text-xs uppercase opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                 {item.label}
               </span>
             </Link>
@@ -65,8 +117,13 @@ export function SideNav() {
           href="#"
           className="flex items-center gap-4 rounded border-l-4 border-transparent p-3 text-on-surface-variant transition-colors hover:bg-surface-variant/30 hover:text-primary-fixed"
         >
-          <span className="material-symbols-outlined ml-1 shrink-0">help_outline</span>
-          <span className="whitespace-nowrap font-[family-name:var(--font-label)] text-xs uppercase opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <Icon name="help_outline" className="ml-1 text-[20px]" />
+          <span
+            className={cn(
+              "whitespace-nowrap font-[family-name:var(--font-label)] text-xs uppercase transition-opacity duration-300",
+              isExpanded ? "opacity-100" : "opacity-0",
+            )}
+          >
             Support
           </span>
         </Link>

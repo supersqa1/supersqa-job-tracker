@@ -27,6 +27,13 @@ export interface JobApplication {
   updated_at: string;
 }
 
+export interface JobApplicationPage {
+  items: JobApplication[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface PipelineSummary {
   potential: number;
   applied: number;
@@ -51,4 +58,58 @@ export interface JobApplicationCreate {
   next_action?: string | null;
   next_action_at?: string | null;
   applied_at?: string | null;
+}
+
+export type UserRole = "user" | "admin";
+
+export interface User {
+  id: number;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  full_name: string;
+}
+
+export interface UserUpdatePayload {
+  full_name?: string;
+}
+
+export interface ChangePasswordPayload {
+  current_password: string;
+  new_password: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: "bearer";
+  expires_in: number;
+  user: User;
+}
+
+export interface ApiKey {
+  id: number;
+  name: string;
+  key_prefix: string;
+  is_active: boolean;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiKeyCreateResponse extends ApiKey {
+  api_key: string;
 }

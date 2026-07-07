@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.application import ApplicationStatus, RemoteType
 
@@ -18,6 +18,14 @@ class JobApplicationBase(BaseModel):
     next_action: str | None = None
     next_action_at: datetime | None = None
     applied_at: datetime | None = None
+
+    @field_validator("company_name", "role_title")
+    @classmethod
+    def required_text_must_not_be_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Value cannot be blank")
+        return stripped
 
 
 class JobApplicationCreate(JobApplicationBase):
@@ -38,6 +46,16 @@ class JobApplicationUpdate(BaseModel):
     next_action_at: datetime | None = None
     applied_at: datetime | None = None
 
+    @field_validator("company_name", "role_title")
+    @classmethod
+    def optional_text_must_not_be_blank(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Value cannot be blank")
+        return stripped
+
 
 class JobApplicationRead(JobApplicationBase):
     model_config = ConfigDict(from_attributes=True)
@@ -45,6 +63,13 @@ class JobApplicationRead(JobApplicationBase):
     id: int
     created_at: datetime
     updated_at: datetime
+
+
+class JobApplicationPage(BaseModel):
+    items: list[JobApplicationRead]
+    total: int
+    limit: int
+    offset: int
 
 
 class PipelineSummary(BaseModel):

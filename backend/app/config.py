@@ -11,9 +11,20 @@ class Settings(BaseSettings):
     )
 
     database_path: str = "data/job_tracker.db"
+    app_name: str = "SuperSQA Job Tracker"
+    api_version: str = "v1"
+    environment: str = "local"
     cors_origins: str = "http://localhost:8050"
     host: str = "0.0.0.0"
     port: int = 3050
+    jwt_secret_key: str = "change-this-dev-secret-value-with-32-plus-chars"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 480
+    rate_limit_enabled: bool = True
+    rate_limit_login_per_minute: int = 30
+    rate_limit_register_per_minute: int = 10
+    rate_limit_default_per_minute: int = 60
+    rate_limit_demo_per_minute: int = 2
 
     @property
     def database_url(self) -> str:

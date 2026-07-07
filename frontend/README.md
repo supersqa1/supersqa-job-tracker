@@ -1,4 +1,4 @@
-# NEO-HIRE Frontend
+# SuperSQA Job Tracker Frontend
 
 Next.js frontend for the job application tracker, styled with the Aura Executive design system.
 

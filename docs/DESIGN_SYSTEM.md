@@ -1,4 +1,4 @@
-# NEO-HIRE Design System
+# SuperSQA Job Tracker Design System
 
 > Derived from the **Aura Executive** theme exported via Google Stitch (`design/stitch_nexus_career_flow/`). Use this document as the single source of truth for UI decisions in the frontend.
 
