@@ -9,6 +9,7 @@ from app.schemas.application import (
     JobApplicationUpdate,
     PipelineSummary,
 )
+from app.services.applications import apply_application_update, build_pipeline_summary
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -35,13 +36,9 @@ def list_applications(
 
 @router.get("/summary", response_model=PipelineSummary)
 def get_pipeline_summary(db: Session = Depends(get_db)) -> PipelineSummary:
-    counts = {status.value: 0 for status in ApplicationStatus}
-
-    for application in db.query(JobApplication).all():
-        counts[application.status.value] += 1
-
-    total = sum(counts.values())
-    return PipelineSummary(**counts, total=total)
+    return build_pipeline_summary(
+        application.status for application in db.query(JobApplication).all()
+    )
 
 
 @router.get("/{application_id}", response_model=JobApplicationRead)
@@ -74,8 +71,7 @@ def update_application(
     if application is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(application, field, value)
+    apply_application_update(application, payload)
 
     db.commit()
     db.refresh(application)

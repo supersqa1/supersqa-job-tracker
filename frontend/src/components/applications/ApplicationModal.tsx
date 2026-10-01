@@ -9,11 +9,11 @@ import type {
 } from "@/lib/types";
 import { KANBAN_STATUSES, STATUS_CONFIG } from "@/lib/constants";
 import { NeoButton } from "@/components/ui/NeoButton";
-
-type ApplicationFormState = Required<
-  Pick<JobApplicationCreate, "company_name" | "role_title">
-> &
-  Omit<JobApplicationCreate, "company_name" | "role_title">;
+import {
+  type ApplicationFormState,
+  applicationToForm,
+  formToPayload,
+} from "./application-form";
 
 interface ApplicationModalProps {
   application?: JobApplication | null;
@@ -22,33 +22,6 @@ interface ApplicationModalProps {
   error: string | null;
   onClose: () => void;
   onSubmit: (payload: JobApplicationCreate) => Promise<void>;
-}
-
-const blankForm = (status: ApplicationStatus): ApplicationFormState => ({
-  company_name: "",
-  role_title: "",
-  status,
-  location: "",
-  remote_type: null,
-  salary_range: "",
-  job_url: "",
-  description: "",
-  notes: "",
-  next_action: "",
-  next_action_at: "",
-  applied_at: "",
-});
-
-function toDatetimeLocal(value: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 16);
-}
-
-function emptyToNull(value: string | null | undefined): string | null {
-  const trimmed = value?.trim() ?? "";
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 export function ApplicationModal({
@@ -60,21 +33,7 @@ export function ApplicationModal({
   onSubmit,
 }: ApplicationModalProps) {
   const initialState = useMemo<ApplicationFormState>(() => {
-    if (!application) return blankForm(defaultStatus);
-    return {
-      company_name: application.company_name,
-      role_title: application.role_title,
-      status: application.status,
-      location: application.location ?? "",
-      remote_type: application.remote_type,
-      salary_range: application.salary_range ?? "",
-      job_url: application.job_url ?? "",
-      description: application.description ?? "",
-      notes: application.notes ?? "",
-      next_action: application.next_action ?? "",
-      next_action_at: toDatetimeLocal(application.next_action_at),
-      applied_at: toDatetimeLocal(application.applied_at),
-    };
+    return applicationToForm(application, defaultStatus);
   }, [application, defaultStatus]);
 
   const [form, setForm] = useState<ApplicationFormState>(initialState);
@@ -89,20 +48,7 @@ export function ApplicationModal({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await onSubmit({
-      company_name: form.company_name.trim(),
-      role_title: form.role_title.trim(),
-      status: form.status,
-      location: emptyToNull(form.location),
-      remote_type: form.remote_type,
-      salary_range: emptyToNull(form.salary_range),
-      job_url: emptyToNull(form.job_url),
-      description: emptyToNull(form.description),
-      notes: emptyToNull(form.notes),
-      next_action: emptyToNull(form.next_action),
-      next_action_at: emptyToNull(form.next_action_at),
-      applied_at: emptyToNull(form.applied_at),
-    });
+    await onSubmit(formToPayload(form));
   }
 
   return (
@@ -151,8 +97,11 @@ export function ApplicationModal({
             </h3>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="flex flex-col gap-2">
-                <span className="field-label">Company</span>
+                <span className="field-label" id="company-name-label">
+                  Company
+                </span>
                 <input
+                  aria-labelledby="company-name-label"
                   required
                   value={form.company_name}
                   onChange={(event) =>
@@ -163,8 +112,11 @@ export function ApplicationModal({
                 />
               </label>
               <label className="flex flex-col gap-2">
-                <span className="field-label">Role</span>
+                <span className="field-label" id="role-title-label">
+                  Role
+                </span>
                 <input
+                  aria-labelledby="role-title-label"
                   required
                   value={form.role_title}
                   onChange={(event) => updateField("role_title", event.target.value)}
@@ -173,9 +125,12 @@ export function ApplicationModal({
                 />
               </label>
               <label className="flex flex-col gap-2">
-                <span className="field-label">Status</span>
+                <span className="field-label" id="application-status-label">
+                  Status
+                </span>
                 <span className="relative">
                   <select
+                    aria-labelledby="application-status-label"
                     value={form.status}
                     onChange={(event) =>
                       updateField("status", event.target.value as ApplicationStatus)
@@ -194,9 +149,12 @@ export function ApplicationModal({
                 </span>
               </label>
               <label className="flex flex-col gap-2">
-                <span className="field-label">Work Mode</span>
+                <span className="field-label" id="work-mode-label">
+                  Work Mode
+                </span>
                 <span className="relative">
                   <select
+                    aria-labelledby="work-mode-label"
                     value={form.remote_type ?? ""}
                     onChange={(event) =>
                       updateField(
@@ -219,8 +177,11 @@ export function ApplicationModal({
                 </span>
               </label>
               <label className="flex flex-col gap-2">
-                <span className="field-label">Location</span>
+                <span className="field-label" id="location-label">
+                  Location
+                </span>
                 <input
+                  aria-labelledby="location-label"
                   value={form.location ?? ""}
                   onChange={(event) => updateField("location", event.target.value)}
                   className="field-control"
@@ -228,8 +189,11 @@ export function ApplicationModal({
                 />
               </label>
               <label className="flex flex-col gap-2">
-                <span className="field-label">Salary</span>
+                <span className="field-label" id="salary-label">
+                  Salary
+                </span>
                 <input
+                  aria-labelledby="salary-label"
                   value={form.salary_range ?? ""}
                   onChange={(event) =>
                     updateField("salary_range", event.target.value)
@@ -239,8 +203,11 @@ export function ApplicationModal({
                 />
               </label>
               <label className="flex flex-col gap-2 md:col-span-2">
-                <span className="field-label">Job URL</span>
+                <span className="field-label" id="job-url-label">
+                  Job URL
+                </span>
                 <input
+                  aria-labelledby="job-url-label"
                   value={form.job_url ?? ""}
                   onChange={(event) => updateField("job_url", event.target.value)}
                   className="field-control"
@@ -257,8 +224,11 @@ export function ApplicationModal({
             </h3>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="flex flex-col gap-2">
-                <span className="field-label">Next Action</span>
+                <span className="field-label" id="next-action-label">
+                  Next Action
+                </span>
                 <input
+                  aria-labelledby="next-action-label"
                   value={form.next_action ?? ""}
                   onChange={(event) =>
                     updateField("next_action", event.target.value)
@@ -268,8 +238,11 @@ export function ApplicationModal({
                 />
               </label>
               <label className="flex flex-col gap-2">
-                <span className="field-label">Next Action Date</span>
+                <span className="field-label" id="next-action-date-label">
+                  Next Action Date
+                </span>
                 <input
+                  aria-labelledby="next-action-date-label"
                   value={form.next_action_at ?? ""}
                   onChange={(event) =>
                     updateField("next_action_at", event.target.value)
@@ -279,8 +252,11 @@ export function ApplicationModal({
                 />
               </label>
               <label className="flex flex-col gap-2 md:col-span-2">
-                <span className="field-label">Notes</span>
+                <span className="field-label" id="notes-label">
+                  Notes
+                </span>
                 <textarea
+                  aria-labelledby="notes-label"
                   value={form.notes ?? ""}
                   onChange={(event) => updateField("notes", event.target.value)}
                   className="field-control min-h-28 resize-y"

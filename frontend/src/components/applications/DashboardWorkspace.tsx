@@ -11,8 +11,13 @@ import {
   deleteApplication,
   updateApplication,
 } from "@/lib/api";
-import { KANBAN_STATUSES, STATUS_CONFIG } from "@/lib/constants";
+import { STATUS_CONFIG } from "@/lib/constants";
 import { NeoButton } from "@/components/ui/NeoButton";
+import {
+  buildSummary,
+  countDueApplications,
+  filterApplications,
+} from "./dashboard-logic";
 import { ApplicationModal } from "./ApplicationModal";
 import { KanbanBoard } from "./KanbanBoard";
 
@@ -23,16 +28,6 @@ interface DashboardWorkspaceProps {
 type ModalState =
   | { mode: "create"; status: ApplicationStatus; application: null }
   | { mode: "edit"; status: ApplicationStatus; application: JobApplication };
-
-function buildSummary(applications: JobApplication[]) {
-  return KANBAN_STATUSES.reduce(
-    (summary, status) => {
-      summary[status] = applications.filter((app) => app.status === status).length;
-      return summary;
-    },
-    { total: applications.length } as Record<ApplicationStatus | "total", number>,
-  );
-}
 
 export function DashboardWorkspace({
   initialApplications,
@@ -48,28 +43,12 @@ export function DashboardWorkspace({
 
   const normalizedQuery = query.trim().toLowerCase();
   const visibleApplications = useMemo(() => {
-    if (!normalizedQuery) return applications;
-    return applications.filter((application) =>
-      [
-        application.company_name,
-        application.role_title,
-        application.location ?? "",
-        application.next_action ?? "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedQuery),
-    );
+    return filterApplications(applications, normalizedQuery);
   }, [applications, normalizedQuery]);
 
   const summary = useMemo(() => buildSummary(applications), [applications]);
   const dueCount = useMemo(() => {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    return applications.filter((application) => {
-      if (!application.next_action_at) return false;
-      return new Date(application.next_action_at) <= today;
-    }).length;
+    return countDueApplications(applications);
   }, [applications]);
 
   function openCreate(status: ApplicationStatus = "potential") {
