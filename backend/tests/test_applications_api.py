@@ -1,43 +1,12 @@
-from collections.abc import Generator
-
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
-
-from app.database import Base, get_db
-from app.main import app
 
 
-@pytest.fixture
-def client() -> Generator[TestClient, None, None]:
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    Base.metadata.create_all(bind=engine)
-
-    def override_get_db() -> Generator[Session, None, None]:
-        db = TestingSessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    with TestClient(app) as test_client:
-        yield test_client
-
-    app.dependency_overrides.clear()
-    Base.metadata.drop_all(bind=engine)
-    engine.dispose()
-
-
-def create_application(client: TestClient, **overrides: object) -> dict[str, object]:
+def create_application(
+    client: TestClient,
+    auth_headers: dict[str, str],
+    **overrides: object,
+) -> dict[str, object]:
     payload = {
         "company_name": "Acme",
         "role_title": "Senior QA Engineer",
@@ -46,7 +15,7 @@ def create_application(client: TestClient, **overrides: object) -> dict[str, obj
         "remote_type": "remote",
     } | overrides
 
-    response = client.post("/api/applications", json=payload)
+    response = client.post("/api/applications", json=payload, headers=auth_headers)
 
     assert response.status_code == 201
     return response.json()
@@ -62,9 +31,19 @@ def test_health_and_root_endpoints_are_available(client: TestClient):
     assert root_response.json()["docs"] == "/docs"
 
 
-def test_create_and_read_application_round_trip(client: TestClient):
+def test_application_endpoints_require_authentication(client: TestClient):
+    response = client.get("/api/applications")
+
+    assert response.status_code == 401
+
+
+def test_create_and_read_application_round_trip(
+    client: TestClient,
+    auth_headers: dict[str, str],
+):
     created = create_application(
         client,
+        auth_headers,
         company_name="Globex",
         role_title="Automation Lead",
         status="applied",
@@ -73,11 +52,12 @@ def test_create_and_read_application_round_trip(client: TestClient):
         notes="Hiring manager screen next",
     )
 
-    response = client.get(f"/api/applications/{created['id']}")
+    response = client.get(f"/api/applications/{created['id']}", headers=auth_headers)
 
     assert response.status_code == 200
     application = response.json()
     assert application["id"] == created["id"]
+    assert application["user_id"] == 1
     assert application["company_name"] == "Globex"
     assert application["role_title"] == "Automation Lead"
     assert application["status"] == "applied"
@@ -88,16 +68,46 @@ def test_create_and_read_application_round_trip(client: TestClient):
     assert application["updated_at"]
 
 
-def test_list_applications_supports_status_filter_and_search(client: TestClient):
-    create_application(client, company_name="Acme", role_title="Backend QA", status="applied")
-    create_application(client, company_name="Globex", role_title="Frontend QA", status="potential")
-    create_application(client, company_name="Initech", role_title="SDET", status="applied")
+def test_list_applications_supports_status_filter_and_search(
+    client: TestClient,
+    auth_headers: dict[str, str],
+):
+    create_application(
+        client,
+        auth_headers,
+        company_name="Acme",
+        role_title="Backend QA",
+        status="applied",
+    )
+    create_application(
+        client,
+        auth_headers,
+        company_name="Globex",
+        role_title="Frontend QA",
+        status="potential",
+    )
+    create_application(
+        client,
+        auth_headers,
+        company_name="Initech",
+        role_title="SDET",
+        status="applied",
+    )
 
-    applied_response = client.get("/api/applications", params={"status": "applied"})
-    search_response = client.get("/api/applications", params={"search": "front"})
+    applied_response = client.get(
+        "/api/applications",
+        params={"status": "applied"},
+        headers=auth_headers,
+    )
+    search_response = client.get(
+        "/api/applications",
+        params={"search": "front"},
+        headers=auth_headers,
+    )
     combined_response = client.get(
         "/api/applications",
         params={"status": "applied", "search": "qa"},
+        headers=auth_headers,
     )
 
     assert applied_response.status_code == 200
@@ -110,14 +120,17 @@ def test_list_applications_supports_status_filter_and_search(client: TestClient)
     assert [item["company_name"] for item in combined_response.json()] == ["Acme"]
 
 
-def test_summary_counts_all_pipeline_statuses(client: TestClient):
-    create_application(client, company_name="Acme", status="potential")
-    create_application(client, company_name="Globex", status="applied")
-    create_application(client, company_name="Initech", status="applied")
-    create_application(client, company_name="Umbrella", status="in_progress")
-    create_application(client, company_name="Soylent", status="rejected")
+def test_summary_counts_all_pipeline_statuses(
+    client: TestClient,
+    auth_headers: dict[str, str],
+):
+    create_application(client, auth_headers, company_name="Acme", status="potential")
+    create_application(client, auth_headers, company_name="Globex", status="applied")
+    create_application(client, auth_headers, company_name="Initech", status="applied")
+    create_application(client, auth_headers, company_name="Umbrella", status="in_progress")
+    create_application(client, auth_headers, company_name="Soylent", status="rejected")
 
-    response = client.get("/api/applications/summary")
+    response = client.get("/api/applications/summary", headers=auth_headers)
 
     assert response.status_code == 200
     assert response.json() == {
@@ -134,9 +147,11 @@ def test_summary_counts_all_pipeline_statuses(client: TestClient):
 
 def test_patch_application_updates_only_supplied_fields_and_allows_nullable_fields(
     client: TestClient,
+    auth_headers: dict[str, str],
 ):
     created = create_application(
         client,
+        auth_headers,
         company_name="Acme",
         role_title="QA Engineer",
         status="potential",
@@ -151,6 +166,7 @@ def test_patch_application_updates_only_supplied_fields_and_allows_nullable_fiel
             "status": "in_progress",
             "remote_type": None,
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -162,12 +178,15 @@ def test_patch_application_updates_only_supplied_fields_and_allows_nullable_fiel
     assert updated["notes"] == "Preserve me"
 
 
-def test_delete_application_removes_it_from_collection(client: TestClient):
-    created = create_application(client)
+def test_delete_application_removes_it_from_collection(
+    client: TestClient,
+    auth_headers: dict[str, str],
+):
+    created = create_application(client, auth_headers)
 
-    delete_response = client.delete(f"/api/applications/{created['id']}")
-    get_response = client.get(f"/api/applications/{created['id']}")
-    list_response = client.get("/api/applications")
+    delete_response = client.delete(f"/api/applications/{created['id']}", headers=auth_headers)
+    get_response = client.get(f"/api/applications/{created['id']}", headers=auth_headers)
+    list_response = client.get("/api/applications", headers=auth_headers)
 
     assert delete_response.status_code == 204
     assert delete_response.content == b""
@@ -183,11 +202,16 @@ def test_delete_application_removes_it_from_collection(client: TestClient):
         ("delete", "/api/applications/999"),
     ],
 )
-def test_missing_application_returns_404(client: TestClient, method: str, path: str):
+def test_missing_application_returns_404(
+    client: TestClient,
+    auth_headers: dict[str, str],
+    method: str,
+    path: str,
+):
     request = getattr(client, method)
     kwargs = {"json": {"status": "applied"}} if method == "patch" else {}
 
-    response = request(path, **kwargs)
+    response = request(path, **kwargs, headers=auth_headers)
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Application not found"}
@@ -204,8 +228,9 @@ def test_missing_application_returns_404(client: TestClient, method: str, path: 
 )
 def test_create_application_rejects_invalid_payloads(
     client: TestClient,
+    auth_headers: dict[str, str],
     payload: dict[str, str],
 ):
-    response = client.post("/api/applications", json=payload)
+    response = client.post("/api/applications", json=payload, headers=auth_headers)
 
     assert response.status_code == 422

@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:8050"
     host: str = "0.0.0.0"
     port: int = 3050
+    jwt_secret_key: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 8
+    default_admin_username: str = "admin"
+    default_admin_password: str = "admin123!"
 
     @property
     def database_url(self) -> str:

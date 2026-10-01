@@ -1,14 +1,14 @@
 import type { JobApplication } from "@/lib/types";
 import { AppShell } from "@/components/layout/AppShell";
 import { DashboardWorkspace } from "@/components/applications/DashboardWorkspace";
-import { getApplications } from "@/lib/api";
+import { getApplicationsServer } from "@/lib/server-api";
 
 export default async function DashboardPage() {
   let applications: JobApplication[] = [];
   let error: string | null = null;
 
   try {
-    applications = await getApplications();
+    applications = await getApplicationsServer();
   } catch (err) {
     error =
       err instanceof Error

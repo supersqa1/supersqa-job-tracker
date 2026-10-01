@@ -49,6 +49,7 @@ describe("ApplicationModal", () => {
       <ApplicationModal
         application={{
           id: 1,
+          user_id: 1,
           company_name: "Globex",
           role_title: "SDET",
           status: "in_progress",
