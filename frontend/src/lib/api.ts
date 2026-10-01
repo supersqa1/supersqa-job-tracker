@@ -1,14 +1,19 @@
 import type {
+  AuthUser,
   ApplicationStatus,
   JobApplication,
   JobApplicationCreate,
   PipelineSummary,
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3050";
+const API_BASE = process.env.NEXT_PUBLIC_API_PROXY_PATH ?? "/api/backend";
+
+function toProxyPath(path: string): string {
+  return `${API_BASE}${path.replace(/^\/api/, "")}`;
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(toProxyPath(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -19,6 +24,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const detail = await response.text();
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.location.assign("/login");
+    }
     throw new Error(detail || `Request failed: ${response.status}`);
   }
 
@@ -69,4 +77,8 @@ export function updateApplication(
 
 export function deleteApplication(id: number): Promise<void> {
   return request<void>(`/api/applications/${id}`, { method: "DELETE" });
+}
+
+export function getCurrentUser(): Promise<AuthUser> {
+  return request<AuthUser>("/api/auth/me");
 }

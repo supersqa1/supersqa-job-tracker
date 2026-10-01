@@ -43,9 +43,28 @@ SQLite database file lives at `backend/data/job_tracker.db` (gitignored). The `d
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
-| GET | `/api/applications` | List applications (optional `status`, `search`) |
-| GET | `/api/applications/summary` | Pipeline counts by status |
-| GET | `/api/applications/{id}` | Get single application |
-| POST | `/api/applications` | Create application |
-| PATCH | `/api/applications/{id}` | Update application |
-| DELETE | `/api/applications/{id}` | Delete application |
+| POST | `/api/auth/register` | Create a user and issue a JWT access token |
+| POST | `/api/auth/login` | Issue a JWT access token |
+| GET | `/api/auth/me` | Read the authenticated user |
+| GET | `/api/applications` | List the current user's applications (optional `status`, `search`; requires bearer token) |
+| GET | `/api/applications/summary` | Pipeline counts for the current user (requires bearer token) |
+| GET | `/api/applications/{id}` | Get one of the current user's applications (requires bearer token) |
+| POST | `/api/applications` | Create an application owned by the current user (requires bearer token) |
+| PATCH | `/api/applications/{id}` | Update one of the current user's applications (requires bearer token) |
+| DELETE | `/api/applications/{id}` | Delete one of the current user's applications (requires bearer token) |
+
+## Authentication
+
+The app seeds one admin user on startup if it does not already exist. Configure these
+values in `.env` before production use:
+
+```bash
+JWT_SECRET_KEY=<strong-random-secret>
+DEFAULT_ADMIN_USERNAME=admin
+DEFAULT_ADMIN_PASSWORD=<strong-password>
+ACCESS_TOKEN_EXPIRE_MINUTES=480
+```
+
+Users can also self-register through `/api/auth/register`. Every job application is
+stored with a `user_id`, and application endpoints only return or mutate records owned
+by the authenticated user.

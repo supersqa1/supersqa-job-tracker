@@ -11,6 +11,7 @@ export type RemoteType = "remote" | "hybrid" | "on_site";
 
 export interface JobApplication {
   id: number;
+  user_id: number;
   company_name: string;
   role_title: string;
   status: ApplicationStatus;
@@ -51,4 +52,10 @@ export interface JobApplicationCreate {
   next_action?: string | null;
   next_action_at?: string | null;
   applied_at?: string | null;
+}
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  is_active: boolean;
 }

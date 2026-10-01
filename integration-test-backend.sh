@@ -9,4 +9,4 @@ else
   PYTHON=python3
 fi
 
-exec "$PYTHON" -m pytest tests/test_applications_api.py
+exec "$PYTHON" -m pytest tests/test_auth_api.py tests/test_applications_api.py

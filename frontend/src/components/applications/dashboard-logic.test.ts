@@ -12,6 +12,7 @@ function application(
 ): JobApplication {
   return {
     id,
+    user_id: 1,
     company_name: `Company ${id}`,
     role_title: "QA Engineer",
     status: "potential",

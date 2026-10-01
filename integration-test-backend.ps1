@@ -4,9 +4,9 @@ Set-Location "$Root\backend"
 if (Test-Path ".venv\Scripts\python.exe") {
   & ".venv\Scripts\python.exe" -m pytest --version *> $null
   if ($LASTEXITCODE -eq 0) {
-    & ".venv\Scripts\python.exe" -m pytest tests/test_applications_api.py
+    & ".venv\Scripts\python.exe" -m pytest tests/test_auth_api.py tests/test_applications_api.py
     exit $LASTEXITCODE
   }
 }
 
-& python -m pytest tests/test_applications_api.py
+& python -m pytest tests/test_auth_api.py tests/test_applications_api.py

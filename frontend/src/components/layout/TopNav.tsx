@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function TopNav() {
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
+
   return (
     <nav className="sticky top-0 z-50 hidden h-16 w-full items-center justify-between border-b border-outline-variant/30 bg-surface/60 px-gutter py-unit shadow-[0_0_15px_rgba(0,242,255,0.1)] backdrop-blur-xl md:flex">
       <div className="flex items-center gap-gutter">
@@ -38,6 +47,14 @@ export function TopNav() {
           aria-label="Settings"
         >
           <span className="material-symbols-outlined">settings</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="text-on-surface-variant transition-colors hover:text-primary-fixed-dim"
+          aria-label="Log out"
+        >
+          <span className="material-symbols-outlined">logout</span>
         </button>
         <div className="relative h-8 w-8 overflow-hidden rounded-full border border-primary-fixed-dim/50 bg-surface-container-high">
           <div className="flex h-full w-full items-center justify-center font-[family-name:var(--font-label)] text-xs text-primary-fixed-dim">

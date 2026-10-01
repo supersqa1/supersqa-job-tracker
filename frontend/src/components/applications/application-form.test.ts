@@ -33,6 +33,7 @@ describe("application form helpers", () => {
   it("maps an existing application into editable form state", () => {
     const application: JobApplication = {
       id: 7,
+      user_id: 1,
       company_name: "Acme",
       role_title: "QA Lead",
       status: "in_progress",
