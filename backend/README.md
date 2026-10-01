@@ -20,6 +20,20 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 3050
 
 API docs: http://localhost:3050/docs
 
+## Unit Test
+
+From the project root:
+
+```bash
+./unit-test-backend.sh
+```
+
+Or from this directory:
+
+```bash
+python -m pytest
+```
+
 ## Database
 
 SQLite database file lives at `backend/data/job_tracker.db` (gitignored). The `data/` directory is kept in version control via `.gitkeep` so the path always exists. Override the path with `DATABASE_PATH` in `.env`.
